@@ -55,12 +55,15 @@ cp .env.example .env.local
 
 **需要的 Firebase 環境變數：**
 ```
-VITE_FIREBASE_API_KEY=...
-VITE_FIREBASE_AUTH_DOMAIN=...
-VITE_FIREBASE_PROJECT_ID=...
-VITE_FIREBASE_STORAGE_BUCKET=...
-VITE_FIREBASE_MESSAGING_SENDER_ID=...
-VITE_FIREBASE_APP_ID=...
+const firebaseConfig = {
+  apiKey: "AIzaSyB15mRTijj07r2JgOP8UPbMCIf5vFUxOhQ",
+  authDomain: "omniflow-44109.firebaseapp.com",
+  projectId: "omniflow-44109",
+  storageBucket: "omniflow-44109.firebasestorage.app",
+  messagingSenderId: "238278734023",
+  appId: "1:238278734023:web:9dc2b721e9731005be8ee2",
+  measurementId: "G-W65SXB233Z"
+};
 ```
 
 > ⚠️ 若不設定 Firebase，應用程式仍可在「本地模式」完整運行，資料儲存於瀏覽器 IndexedDB。
