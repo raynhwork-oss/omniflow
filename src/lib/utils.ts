@@ -1,16 +1,20 @@
 // ============================================================
-// OmniFlow - Utility Functions
+// OmniFlow - Utility Functions (Dark Mode Edition)
 // ============================================================
 
 import type { OmniItem, ItemType, ItemStatus, ItemPriority } from '../types';
 
 export function generateId(): string {
-  // Use crypto.randomUUID if available
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
-  // Fallback
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
+}
+
+export function todayIso(): string {
+  const now = new Date();
+  now.setHours(9, 0, 0, 0);
+  return now.toISOString();
 }
 
 export function createNewItem(
@@ -25,7 +29,7 @@ export function createNewItem(
     type: overrides.type ?? 'Inbox',
     status: overrides.status ?? 'Todo',
     priority: overrides.priority ?? 'None',
-    start_date: overrides.start_date,
+    start_date: overrides.start_date ?? todayIso(),   // ← default today
     due_date: overrides.due_date,
     project_id: overrides.project_id ?? null,
     tags: overrides.tags ?? [],
@@ -39,35 +43,53 @@ export function createNewItem(
 
 export const ANONYMOUS_USER_ID = 'anonymous';
 
+// ── Priority ─────────────────────────────────────────────────
+export const PRIORITY_DOT_CLASS: Record<ItemPriority, string> = {
+  High:   'priority-dot-high',
+  Medium: 'priority-dot-medium',
+  Low:    'priority-dot-low',
+  None:   'bg-slate-600',
+};
+
+export const PRIORITY_BADGE_CLASS: Record<ItemPriority, string> = {
+  High:   'badge-high',
+  Medium: 'badge-medium',
+  Low:    'badge-low',
+  None:   'badge-none',
+};
+
+export const PRIORITY_LABEL: Record<ItemPriority, string> = {
+  High: '高', Medium: '中', Low: '低', None: '—',
+};
+
+// Legacy aliases (kept for compat)
 export const PRIORITY_COLORS: Record<ItemPriority, string> = {
-  High: 'text-red-500',
-  Medium: 'text-amber-500',
-  Low: 'text-blue-400',
-  None: 'text-gray-400',
+  High: 'text-rose-400', Medium: 'text-amber-400', Low: 'text-blue-400', None: 'text-slate-500',
 };
-
 export const PRIORITY_BG: Record<ItemPriority, string> = {
-  High: 'bg-red-100 text-red-700',
-  Medium: 'bg-amber-100 text-amber-700',
-  Low: 'bg-blue-100 text-blue-700',
-  None: 'bg-gray-100 text-gray-600',
+  High: 'badge-high', Medium: 'badge-medium', Low: 'badge-low', None: 'badge-none',
 };
 
-export const STATUS_COLORS: Record<ItemStatus, string> = {
-  Backlog: 'bg-gray-200 text-gray-700',
-  Todo: 'bg-sky-100 text-sky-700',
-  'In Progress': 'bg-violet-100 text-violet-700',
-  Done: 'bg-green-100 text-green-700',
-  Archived: 'bg-gray-100 text-gray-500',
+// ── Status ───────────────────────────────────────────────────
+export const STATUS_BADGE_CLASS: Record<ItemStatus, string> = {
+  Backlog:      'badge-backlog',
+  Todo:         'badge-todo',
+  'In Progress':'badge-inprogress',
+  Done:         'badge-done',
+  Archived:     'badge-archived',
+};
+export const STATUS_COLORS: Record<ItemStatus, string> = STATUS_BADGE_CLASS;
+
+export const STATUS_LABEL: Record<ItemStatus, string> = {
+  Backlog: '待處理', Todo: '準備中', 'In Progress': '進行中', Done: '已完成', Archived: '已封存',
 };
 
+// ── Type ─────────────────────────────────────────────────────
 export const TYPE_ICONS: Record<ItemType, string> = {
-  Inbox: '📥',
-  Task: '✅',
-  Project: '📁',
-  Note: '📝',
+  Inbox: '📥', Task: '✅', Project: '📁', Note: '📝',
 };
 
+// ── Helpers ──────────────────────────────────────────────────
 export function cn(...classes: (string | undefined | null | false)[]): string {
   return classes.filter(Boolean).join(' ');
 }
@@ -78,16 +100,13 @@ export function truncate(str: string, length = 80): string {
 }
 
 export function getSubtaskProgress(subtasks: OmniItem['subtasks'] = []): {
-  done: number;
-  total: number;
-  percent: number;
+  done: number; total: number; percent: number;
 } {
   const total = subtasks.length;
-  const done = subtasks.filter(s => s.done).length;
+  const done  = subtasks.filter(s => s.done).length;
   return { done, total, percent: total > 0 ? Math.round((done / total) * 100) : 0 };
 }
 
-// Simple markdown to plain text (for preview)
 export function markdownToPlain(md: string): string {
   return md
     .replace(/#{1,6}\s+/g, '')

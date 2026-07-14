@@ -1,97 +1,122 @@
 // ============================================================
-// OmniFlow - Time-Blocking Calendar View (Module D)
+// OmniFlow — CalendarView · Fixed re-drag + Dark Edition
+// Fix: calendar events are draggable (draggable attr), using
+//      HTML5 DnD for both sidebar→calendar AND calendar→calendar.
 // ============================================================
 
-import React, { useState, useRef } from 'react';
-import {
-  ChevronLeft, ChevronRight, Calendar, Clock, GripVertical,
-  Plus, ArrowRight, X
-} from 'lucide-react';
+import React, { useState, useRef, useCallback } from 'react';
+import { ChevronLeft, ChevronRight, Clock, GripVertical, Plus, Move } from 'lucide-react';
 import { useApp } from '../../store/useAppStore';
 import type { OmniItem } from '../../types';
-import { cn, PRIORITY_BG } from '../../lib/utils';
-import { formatDate, isToday } from '../../lib/nlp';
+import { cn, PRIORITY_BADGE_CLASS, PRIORITY_LABEL } from '../../lib/utils';
+import { isToday } from '../../lib/nlp';
 
-type CalendarViewMode = 'day' | 'week' | 'month';
+type CalendarMode = 'day' | 'week' | 'month';
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
-const DAYS = ['日', '一', '二', '三', '四', '五', '六'];
+const HOURS   = Array.from({ length: 24 }, (_, i) => i);
+const DAY_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
 
+/* ── helpers ────────────────────────────────────────── */
 function getWeekDates(date: Date): Date[] {
-  const week = [];
   const d = new Date(date);
-  d.setDate(d.getDate() - d.getDay()); // Go to Sunday
-  for (let i = 0; i < 7; i++) {
-    week.push(new Date(d));
-    d.setDate(d.getDate() + 1);
-  }
-  return week;
+  d.setDate(d.getDate() - d.getDay());
+  return Array.from({ length: 7 }, () => { const r = new Date(d); d.setDate(d.getDate() + 1); return r; });
 }
 
-function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate();
+function sameDay(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-function getItemsForDay(items: OmniItem[], day: Date): OmniItem[] {
+function itemsForDay(items: OmniItem[], day: Date) {
   return items.filter(i => {
-    if (!i.due_date && !i.start_date) return false;
-    const d = new Date(i.due_date || i.start_date || '');
-    return isSameDay(d, day);
+    const ref = i.start_date || i.due_date;
+    return ref && sameDay(new Date(ref), day);
   });
 }
 
-// Unscheduled sidebar items (no date)
-function UnscheduledPanel({ items, onSchedule }: {
+function getHour(item: OmniItem) {
+  const ref = item.start_date || item.due_date;
+  return ref ? new Date(ref).getHours() : 9;
+}
+
+/* ── Event block (draggable FROM calendar) ─────────── */
+function CalEvent({ item }: { item: OmniItem }) {
+  const { setSelectedItemId } = useApp();
+  const PALETTE = [
+    'bg-brand-600/25 border-brand-500/40 text-brand-200',
+    'bg-emerald-600/20 border-emerald-500/35 text-emerald-200',
+    'bg-violet-600/20 border-violet-500/35 text-violet-200',
+    'bg-amber-600/20 border-amber-500/35 text-amber-200',
+    'bg-cyan-600/20 border-cyan-500/35 text-cyan-200',
+  ];
+  const color = PALETTE[item.title.charCodeAt(0) % PALETTE.length];
+
+  return (
+    <div
+      draggable
+      onDragStart={e => {
+        e.stopPropagation();
+        e.dataTransfer.setData('itemId', item.id);
+        e.dataTransfer.effectAllowed = 'move';
+      }}
+      onClick={e => { e.stopPropagation(); setSelectedItemId(item.id); }}
+      className={cn(
+        'border-l-2 rounded-r-lg px-2 py-1 mb-0.5 cursor-grab active:cursor-grabbing',
+        'transition-all duration-150 hover:scale-[1.01] hover:shadow-glow-sm',
+        color,
+      )}
+    >
+      <div className="flex items-center gap-1">
+        <Move size={9} className="opacity-40 flex-shrink-0"/>
+        <p className="text-xs font-medium truncate">{item.title}</p>
+      </div>
+      {item.start_date && (
+        <p className="text-xs opacity-60 ml-3">
+          {new Date(item.start_date).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ── Unscheduled sidebar ───────────────────────────── */
+function UnscheduledPanel({ items, onDrop }: {
   items: OmniItem[];
-  onSchedule: (itemId: string, date: Date, hour?: number) => void;
+  onDrop: (id: string, date: Date, hour: number) => void;
 }) {
   const { setSelectedItemId } = useApp();
-  const [draggingId, setDraggingId] = useState<string | null>(null);
   const unscheduled = items.filter(i =>
     !i.due_date && !i.start_date &&
     (i.type === 'Task' || i.type === 'Inbox') &&
-    i.status !== 'Done' && i.status !== 'Archived'
+    i.status !== 'Done' && i.status !== 'Archived',
   );
 
   return (
-    <div className="w-64 border-l border-surface-200 flex flex-col bg-surface-50">
-      <div className="p-4 border-b border-surface-200">
-        <h3 className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
-          <Clock size={14} className="text-brand-500" />
+    <div className="w-60 border-l border-white/06 flex flex-col bg-dark-700/50">
+      <div className="p-4 border-b border-white/06">
+        <h3 className="text-xs font-semibold text-slate-400 flex items-center gap-2 mb-1">
+          <Clock size={13} className="text-brand-400"/>
           未排程任務
         </h3>
-        <p className="text-xs text-gray-400">拖曳到行事曆排程</p>
+        <p className="text-xs text-slate-600">拖曳到行事曆格子中排程</p>
       </div>
-      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+      <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-none">
         {unscheduled.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-xs text-gray-400">所有任務已排程！</p>
-          </div>
+          <p className="text-xs text-slate-700 text-center py-6">所有任務已排程！</p>
         ) : unscheduled.map(item => (
           <div
             key={item.id}
             draggable
-            onDragStart={e => {
-              e.dataTransfer.setData('itemId', item.id);
-              setDraggingId(item.id);
-            }}
-            onDragEnd={() => setDraggingId(null)}
+            onDragStart={e => { e.dataTransfer.setData('itemId', item.id); e.dataTransfer.effectAllowed = 'move'; }}
             onClick={() => setSelectedItemId(item.id)}
-            className={cn(
-              'flex items-center gap-2 p-2.5 bg-white border rounded-xl cursor-grab active:cursor-grabbing transition-all',
-              draggingId === item.id
-                ? 'opacity-50 scale-95 border-brand-300'
-                : 'border-surface-200 hover:border-brand-200 hover:shadow-sm'
-            )}
+            className="flex items-center gap-2 p-2.5 glass-card glass-card-hover cursor-grab active:cursor-grabbing"
           >
-            <GripVertical size={14} className="text-gray-300 flex-shrink-0" />
+            <GripVertical size={12} className="text-slate-700 flex-shrink-0"/>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-gray-800 truncate">{item.title}</p>
+              <p className="text-xs font-medium text-slate-300 truncate">{item.title}</p>
               {item.priority !== 'None' && (
-                <span className={cn('text-xs px-1.5 py-0.5 rounded-full', PRIORITY_BG[item.priority])}>
-                  {item.priority === 'High' ? '高' : item.priority === 'Medium' ? '中' : '低'}
+                <span className={cn('text-xs px-1.5 py-0 rounded-full', PRIORITY_BADGE_CLASS[item.priority])}>
+                  {PRIORITY_LABEL[item.priority]}
                 </span>
               )}
             </div>
@@ -102,123 +127,94 @@ function UnscheduledPanel({ items, onSchedule }: {
   );
 }
 
-// Event block displayed on calendar
-function EventBlock({ item, compact = false }: { item: OmniItem; compact?: boolean }) {
-  const { setSelectedItemId } = useApp();
-  const colors = [
-    'bg-brand-100 border-brand-400 text-brand-800',
-    'bg-emerald-100 border-emerald-400 text-emerald-800',
-    'bg-violet-100 border-violet-400 text-violet-800',
-    'bg-amber-100 border-amber-400 text-amber-800',
-  ];
-  const colorIdx = item.title.charCodeAt(0) % colors.length;
+/* ── Time slot ─────────────────────────────────────── */
+function TimeSlot({ date, hour, slotItems, onDrop, onNewItem }: {
+  date: Date; hour: number;
+  slotItems: OmniItem[];
+  onDrop: (id: string, date: Date, hour: number) => void;
+  onNewItem: (date: Date, hour: number) => void;
+}) {
+  const [dragOver, setDragOver] = useState(false);
 
   return (
     <div
-      onClick={e => { e.stopPropagation(); setSelectedItemId(item.id); }}
       className={cn(
-        'border-l-2 rounded-r-lg px-2 py-1 cursor-pointer hover:opacity-80 transition-opacity',
-        colors[colorIdx],
-        compact ? 'text-xs' : 'text-xs'
+        'h-16 border-b border-white/04 relative cursor-pointer group transition-colors',
+        dragOver ? 'bg-brand-500/10 border-brand-500/20' : 'hover:bg-white/02',
       )}
+      onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={e => {
+        e.preventDefault(); setDragOver(false);
+        const id = e.dataTransfer.getData('itemId');
+        if (id) onDrop(id, date, hour);
+      }}
+      onClick={() => onNewItem(date, hour)}
     >
-      <p className="font-medium truncate">{item.title}</p>
-      {!compact && item.due_date && (
-        <p className="opacity-70 text-xs">
-          {new Date(item.due_date).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}
-        </p>
-      )}
+      {/* Plus hint */}
+      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+        <Plus size={11} className="text-brand-500/50"/>
+      </div>
+      {/* Events */}
+      <div className="absolute inset-x-1 top-1 bottom-0 overflow-hidden">
+        {slotItems.map(item => <CalEvent key={item.id} item={item}/>)}
+      </div>
     </div>
   );
 }
 
-// Week / Day View
-function WeekDayGrid({
-  dates,
-  items,
-  onDrop,
-  onHourClick,
-}: {
+/* ── Week/Day grid ─────────────────────────────────── */
+function WeekGrid({ dates, items, onDrop, onNewItem }: {
   dates: Date[];
   items: OmniItem[];
-  onDrop: (itemId: string, date: Date, hour: number) => void;
-  onHourClick: (date: Date, hour: number) => void;
+  onDrop: (id: string, date: Date, hour: number) => void;
+  onNewItem: (date: Date, hour: number) => void;
 }) {
-  function handleDragOver(e: React.DragEvent) {
-    e.preventDefault();
-  }
-
-  function handleDrop(e: React.DragEvent, date: Date, hour: number) {
-    const itemId = e.dataTransfer.getData('itemId');
-    if (itemId) onDrop(itemId, date, hour);
-  }
-
   const today = new Date();
 
   return (
     <div className="flex flex-1 overflow-auto">
-      {/* Time column */}
-      <div className="w-16 flex-shrink-0">
-        <div className="h-10" /> {/* Header spacer */}
+      {/* Hour column */}
+      <div className="w-14 flex-shrink-0">
+        <div className="h-10"/>
         {HOURS.map(h => (
-          <div key={h} className="h-16 border-b border-surface-100 flex items-start justify-end pr-3 pt-1">
-            <span className="text-xs text-gray-400 font-mono">
-              {h.toString().padStart(2, '0')}:00
-            </span>
+          <div key={h} className="h-16 border-b border-white/04 flex items-start justify-end pr-2 pt-1">
+            <span className="text-xs text-slate-700 font-mono">{h.toString().padStart(2,'0')}</span>
           </div>
         ))}
       </div>
 
       {/* Day columns */}
       {dates.map(date => {
-        const dayItems = getItemsForDay(items, date);
-        const isCurrentDay = isSameDay(date, today);
-
+        const dayItems  = itemsForDay(items, date);
+        const isCurrent = sameDay(date, today);
         return (
-          <div key={date.toISOString()} className="flex-1 border-l border-surface-100 min-w-[100px]">
+          <div key={date.toISOString()} className="flex-1 border-l border-white/05 min-w-[100px]">
             {/* Day header */}
             <div className={cn(
-              'h-10 border-b border-surface-100 flex flex-col items-center justify-center',
-              isCurrentDay && 'bg-brand-50'
+              'h-10 border-b border-white/05 flex flex-col items-center justify-center',
+              isCurrent && 'bg-brand-600/10',
             )}>
-              <span className="text-xs text-gray-500">{DAYS[date.getDay()]}</span>
+              <span className="text-xs text-slate-600">{DAY_NAMES[date.getDay()]}</span>
               <span className={cn(
-                'text-sm font-bold leading-none',
-                isCurrentDay ? 'text-brand-600' : 'text-gray-800'
+                'text-sm font-bold leading-tight',
+                isCurrent ? 'text-brand-300' : 'text-slate-400',
               )}>
                 {date.getDate()}
               </span>
             </div>
 
-            {/* Hour slots */}
-            {HOURS.map(hour => {
-              const slotItems = dayItems.filter(i => {
-                const d = new Date(i.due_date || i.start_date || '');
-                return d.getHours() === hour;
-              });
-
-              return (
-                <div
-                  key={hour}
-                  className="h-16 border-b border-surface-100 relative hover:bg-brand-50/30 transition-colors cursor-pointer group"
-                  onDragOver={handleDragOver}
-                  onDrop={e => handleDrop(e, date, hour)}
-                  onClick={() => onHourClick(date, hour)}
-                >
-                  {/* Plus hint on hover */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Plus size={12} className="text-brand-400" />
-                  </div>
-
-                  {/* Events */}
-                  <div className="absolute inset-0 p-1 space-y-0.5">
-                    {slotItems.map(item => (
-                      <EventBlock key={item.id} item={item} compact />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+            {/* Slots */}
+            {HOURS.map(hour => (
+              <TimeSlot
+                key={hour}
+                date={date}
+                hour={hour}
+                slotItems={dayItems.filter(i => getHour(i) === hour)}
+                onDrop={onDrop}
+                onNewItem={onNewItem}
+              />
+            ))}
           </div>
         );
       })}
@@ -226,77 +222,65 @@ function WeekDayGrid({
   );
 }
 
-// Month View
-function MonthGrid({
-  year,
-  month,
-  items,
-  onDrop,
-  onDayClick,
-}: {
-  year: number;
-  month: number;
+/* ── Month grid ────────────────────────────────────── */
+function MonthGrid({ year, month, items, onDrop, onDayClick }: {
+  year: number; month: number;
   items: OmniItem[];
-  onDrop: (itemId: string, date: Date) => void;
+  onDrop: (id: string, date: Date, hour: number) => void;
   onDayClick: (date: Date) => void;
 }) {
-  const firstDay = new Date(year, month, 1);
-  const startDow = firstDay.getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const today = new Date();
-
-  const cells: (Date | null)[] = [
-    ...Array(startDow).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => new Date(year, month, i + 1)),
+  const today    = new Date();
+  const firstDow = new Date(year, month, 1).getDay();
+  const daysInM  = new Date(year, month + 1, 0).getDate();
+  const cells: (Date|null)[] = [
+    ...Array(firstDow).fill(null),
+    ...Array.from({ length: daysInM }, (_, i) => new Date(year, month, i + 1)),
   ];
 
-  function handleDrop(e: React.DragEvent, date: Date) {
-    e.preventDefault();
-    const itemId = e.dataTransfer.getData('itemId');
-    if (itemId) onDrop(itemId, date);
-  }
+  const [dragOverDay, setDragOverDay] = useState<string|null>(null);
 
   return (
     <div className="flex-1 overflow-auto p-4">
-      {/* Day headers */}
       <div className="grid grid-cols-7 mb-2">
-        {DAYS.map(d => (
-          <div key={d} className="text-center text-xs font-semibold text-gray-400 py-2">{d}</div>
+        {DAY_NAMES.map(d => (
+          <div key={d} className="text-center text-xs font-semibold text-slate-600 py-2">{d}</div>
         ))}
       </div>
-
-      {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-1">
         {cells.map((date, idx) => {
-          if (!date) return <div key={`empty-${idx}`} />;
-          const dayItems = getItemsForDay(items, date);
-          const isCurrentDay = isSameDay(date, today);
-
+          if (!date) return <div key={`e${idx}`}/>;
+          const key       = date.toDateString();
+          const dayItems  = itemsForDay(items, date);
+          const isCurrent = sameDay(date, today);
+          const isOver    = dragOverDay === key;
           return (
             <div
-              key={date.toISOString()}
+              key={key}
               className={cn(
-                'min-h-[100px] p-1.5 rounded-xl border transition-colors cursor-pointer hover:border-brand-200',
-                isCurrentDay ? 'border-brand-400 bg-brand-50' : 'border-surface-100 bg-white hover:bg-surface-50'
+                'min-h-[90px] p-1.5 rounded-xl border cursor-pointer transition-all duration-150',
+                isCurrent ? 'border-brand-500/40 bg-brand-600/08'
+                           : 'border-white/06 bg-dark-600/40 hover:border-white/12',
+                isOver && 'border-brand-400/50 bg-brand-500/10',
               )}
-              onDragOver={e => e.preventDefault()}
-              onDrop={e => handleDrop(e, date)}
+              onDragOver={e => { e.preventDefault(); setDragOverDay(key); }}
+              onDragLeave={() => setDragOverDay(null)}
+              onDrop={e => {
+                e.preventDefault(); setDragOverDay(null);
+                const id = e.dataTransfer.getData('itemId');
+                if (id) onDrop(id, date, 9);
+              }}
               onClick={() => onDayClick(date)}
             >
               <div className={cn(
-                'text-xs font-bold mb-1 w-6 h-6 flex items-center justify-center rounded-full',
-                isCurrentDay ? 'bg-brand-500 text-white' : 'text-gray-700'
+                'text-xs font-bold mb-1 w-5 h-5 flex items-center justify-center rounded-full',
+                isCurrent ? 'bg-brand-500 text-white' : 'text-slate-500',
               )}>
                 {date.getDate()}
               </div>
-              <div className="space-y-0.5">
-                {dayItems.slice(0, 3).map(item => (
-                  <EventBlock key={item.id} item={item} compact />
-                ))}
-                {dayItems.length > 3 && (
-                  <p className="text-xs text-gray-400 pl-1">+{dayItems.length - 3} 個</p>
-                )}
-              </div>
+              {dayItems.slice(0, 3).map(item => <CalEvent key={item.id} item={item}/>)}
+              {dayItems.length > 3 && (
+                <p className="text-xs text-slate-600 pl-1">+{dayItems.length - 3}</p>
+              )}
             </div>
           );
         })}
@@ -305,121 +289,98 @@ function MonthGrid({
   );
 }
 
+/* ── Main View ─────────────────────────────────────── */
 export function CalendarView() {
   const { items, updateItem } = useApp();
-  const [viewMode, setViewMode] = useState<CalendarViewMode>('week');
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [mode, setMode]           = useState<CalendarMode>('week');
+  const [currentDate, setCurrent] = useState(new Date());
 
-  const scheduledItems = items.filter(i =>
-    (i.due_date || i.start_date) && i.status !== 'Archived'
-  );
+  const scheduled = items.filter(i => (i.start_date || i.due_date) && i.status !== 'Archived');
 
-  function navigate(direction: 1 | -1) {
-    const d = new Date(currentDate);
-    if (viewMode === 'day') d.setDate(d.getDate() + direction);
-    else if (viewMode === 'week') d.setDate(d.getDate() + direction * 7);
-    else d.setMonth(d.getMonth() + direction);
-    setCurrentDate(d);
-  }
-
-  function handleDrop(itemId: string, date: Date, hour = 9) {
-    const targetDate = new Date(date);
-    targetDate.setHours(hour, 0, 0, 0);
-    const endDate = new Date(targetDate);
-    endDate.setHours(hour + 1, 0, 0, 0);
-
+  /* Schedule an item to a date+hour slot — works for both new drops AND re-drags */
+  const handleDrop = useCallback((itemId: string, date: Date, hour: number) => {
+    const start = new Date(date);
+    start.setHours(hour, 0, 0, 0);
+    const end = new Date(start);
+    end.setHours(hour + 1, 0, 0, 0);
     updateItem(itemId, {
-      start_date: targetDate.toISOString(),
-      due_date: endDate.toISOString(),
-      status: 'Todo',
+      start_date: start.toISOString(),
+      due_date:   end.toISOString(),
     });
+  }, [updateItem]);
+
+  function handleNewItem(date: Date, hour: number) {
+    /* Clicking on an empty slot scrolls/highlights — extend later */
   }
 
-  function handleHourClick(date: Date, hour: number) {
-    // Handled by detail drawer via selected item
+  function navigate(dir: 1 | -1) {
+    const d = new Date(currentDate);
+    if (mode === 'day')   d.setDate(d.getDate() + dir);
+    else if (mode === 'week') d.setDate(d.getDate() + dir * 7);
+    else d.setMonth(d.getMonth() + dir);
+    setCurrent(d);
   }
 
-  function getHeaderTitle(): string {
-    if (viewMode === 'day') {
+  function headerTitle() {
+    if (mode === 'day')
       return currentDate.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
-    }
-    if (viewMode === 'week') {
-      const week = getWeekDates(currentDate);
-      return `${week[0].toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })} – ${week[6].toLocaleDateString('zh-TW', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    if (mode === 'week') {
+      const w = getWeekDates(currentDate);
+      return `${w[0].toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })} – ${w[6].toLocaleDateString('zh-TW', { month: 'short', day: 'numeric', year: 'numeric' })}`;
     }
     return currentDate.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long' });
   }
 
-  const weekDates = viewMode === 'week'
-    ? getWeekDates(currentDate)
-    : viewMode === 'day'
-    ? [currentDate]
-    : [];
+  const weekDates = mode === 'week' ? getWeekDates(currentDate)
+                  : mode === 'day'  ? [currentDate]
+                  : [];
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-surface-200">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-white/06">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setCurrentDate(new Date())}
-            className="px-3 py-1.5 text-xs font-medium bg-surface-100 text-gray-600 hover:bg-surface-200 rounded-lg transition-colors"
+            onClick={() => setCurrent(new Date())}
+            className="px-3 py-1.5 text-xs font-medium bg-dark-500 border border-white/07 text-slate-400 hover:border-brand-500/30 hover:text-brand-300 rounded-lg transition-all"
           >
             今天
           </button>
-          <div className="flex items-center gap-1">
-            <button onClick={() => navigate(-1)} className="p-1.5 rounded-lg hover:bg-surface-100 text-gray-500">
-              <ChevronLeft size={16} />
-            </button>
-            <button onClick={() => navigate(1)} className="p-1.5 rounded-lg hover:bg-surface-100 text-gray-500">
-              <ChevronRight size={16} />
-            </button>
+          <div className="flex items-center gap-0.5">
+            <button onClick={() => navigate(-1)} className="btn-ghost p-1.5"><ChevronLeft size={15}/></button>
+            <button onClick={() => navigate(1)}  className="btn-ghost p-1.5"><ChevronRight size={15}/></button>
           </div>
-          <h2 className="text-base font-bold text-gray-900">{getHeaderTitle()}</h2>
+          <h2 className="text-sm font-bold text-slate-200">{headerTitle()}</h2>
         </div>
 
-        {/* View Mode Toggle */}
-        <div className="flex items-center gap-1 bg-surface-100 rounded-xl p-1">
-          {(['day', 'week', 'month'] as CalendarViewMode[]).map(mode => (
+        {/* Mode toggle */}
+        <div className="flex items-center gap-0.5 bg-dark-500 border border-white/07 rounded-xl p-1">
+          {(['day','week','month'] as CalendarMode[]).map(m => (
             <button
-              key={mode}
-              onClick={() => setViewMode(mode)}
+              key={m}
+              onClick={() => setMode(m)}
               className={cn(
                 'px-3 py-1.5 text-xs font-medium rounded-lg transition-all',
-                viewMode === mode
-                  ? 'bg-white text-brand-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
+                mode === m
+                  ? 'bg-brand-600/30 text-brand-300 border border-brand-500/30'
+                  : 'text-slate-500 hover:text-slate-300',
               )}
             >
-              {mode === 'day' ? '日' : mode === 'week' ? '週' : '月'}
+              {m === 'day' ? '日' : m === 'week' ? '週' : '月'}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Calendar Body */}
+      {/* Body */}
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 overflow-hidden flex flex-col">
-          {viewMode === 'month' ? (
-            <MonthGrid
-              year={currentDate.getFullYear()}
-              month={currentDate.getMonth()}
-              items={scheduledItems}
-              onDrop={(id, date) => handleDrop(id, date)}
-              onDayClick={date => setCurrentDate(date)}
-            />
-          ) : (
-            <WeekDayGrid
-              dates={weekDates}
-              items={scheduledItems}
-              onDrop={handleDrop}
-              onHourClick={handleHourClick}
-            />
-          )}
+          {mode === 'month'
+            ? <MonthGrid year={currentDate.getFullYear()} month={currentDate.getMonth()} items={scheduled} onDrop={handleDrop} onDayClick={d => { setCurrent(d); setMode('day'); }}/>
+            : <WeekGrid dates={weekDates} items={scheduled} onDrop={handleDrop} onNewItem={handleNewItem}/>
+          }
         </div>
-
-        {/* Unscheduled Panel */}
-        <UnscheduledPanel items={items} onSchedule={handleDrop} />
+        <UnscheduledPanel items={items} onDrop={handleDrop}/>
       </div>
     </div>
   );

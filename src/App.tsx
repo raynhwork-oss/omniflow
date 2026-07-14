@@ -1,5 +1,5 @@
 // ============================================================
-// OmniFlow - Main Application Component
+// OmniFlow - Main Application — Dark Glassmorphism Edition
 // ============================================================
 
 import React from 'react';
@@ -20,44 +20,45 @@ function MainContent() {
 
   const renderView = () => {
     switch (currentView) {
-      case 'inbox':
-        return <InboxView view="inbox" />;
-      case 'today':
-        return <InboxView view="today" />;
-      case 'kanban':
-        return <KanbanView />;
-      case 'calendar':
-        return <CalendarView />;
-      case 'notes':
-        return <NotesView />;
-      case 'all':
-        return <AllItemsView />;
-      default:
-        return <InboxView view="inbox" />;
+      case 'inbox':    return <InboxView view="inbox" />;
+      case 'today':    return <InboxView view="today" />;
+      case 'kanban':   return <KanbanView />;
+      case 'calendar': return <CalendarView />;
+      case 'notes':    return <NotesView />;
+      case 'all':      return <AllItemsView />;
+      default:         return <InboxView view="inbox" />;
     }
   };
+
+  // Views that don't show the top QuickCapture bar
+  const hideCapture = currentView === 'notes' || currentView === 'calendar';
 
   return (
     <div className="flex-1 flex overflow-hidden">
       {/* Main Work Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Quick Capture Bar (top-level, except in Calendar and Notes) */}
-        {currentView !== 'notes' && (
-          <div className="px-6 py-4 border-b border-surface-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+        {/* Quick Capture Bar — sticky top, glassmorphism */}
+        {!hideCapture && (
+          <div
+            className="px-6 py-3 border-b border-white/[0.05] sticky top-0 z-10"
+            style={{
+              background: 'rgba(11,15,25,0.80)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+            }}
+          >
             <QuickCapture />
           </div>
         )}
 
         {/* View Content */}
-        <div className="flex-1 overflow-hidden bg-surface-50">
+        <div className="flex-1 overflow-hidden bg-dark-base">
           {renderView()}
         </div>
       </div>
 
-      {/* Right Drawer */}
-      {selectedItemId && (
-        <ItemDrawer />
-      )}
+      {/* Right Drawer — slides in from right */}
+      {selectedItemId && <ItemDrawer />}
     </div>
   );
 }
@@ -65,7 +66,11 @@ function MainContent() {
 function App() {
   return (
     <AppProvider>
-      <div className="flex h-screen bg-white overflow-hidden font-sans">
+      {/*
+        Root shell — dark base background, full viewport, no scroll.
+        Inter / system-ui font is set in index.css via font-family.
+      */}
+      <div className="flex h-screen bg-dark-base overflow-hidden font-sans antialiased">
         <Sidebar />
         <MainContent />
       </div>
