@@ -8,80 +8,117 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Brand - Electric Indigo
-        brand: {
-          50:  '#eef0ff',
-          100: '#e0e3ff',
-          200: '#c7ccff',
-          300: '#a5acff',
-          400: '#8080ff',
-          500: '#6366f1',
-          600: '#4f46e5',
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81',
-          950: '#1e1b4b',
+        // ── Warm Cream Base (paper-like) ──────────────────────
+        cream: {
+          50:  '#FDFBF7',   // main bg — warm ivory
+          100: '#FAF6F0',   // slightly deeper bg
+          200: '#F5EBE0',   // warm sand panels
+          300: '#EDDECC',   // card borders
+          400: '#E0CDB8',   // dividers
+          500: '#D0B99A',   // muted text bg
         },
-        // Dark surface system
-        dark: {
-          base:   '#0B0F19',   // deepest bg
-          900:    '#0f1320',
-          800:    '#141824',
-          700:    '#1a2030',
-          600:    '#1e2535',
-          500:    '#232b3d',
-          400:    '#2a3347',
-          300:    '#344059',
-          200:    '#3d4d6b',
-          100:    '#4a5d80',
+        // ── Pastel Orange Brand ───────────────────────────────
+        orange: {
+          50:  '#FFF8ED',
+          100: '#FFE8C2',
+          200: '#FFD08A',
+          300: '#FFB74D',   // accent main
+          400: '#E6A23C',
+          500: '#E68A00',   // terracotta / deep accent
+          600: '#C87700',
+          700: '#A36200',
+          800: '#7A4A00',
+          900: '#5A3600',
         },
-        // Accent colors
-        accent: {
-          cyan:   '#22d3ee',
-          violet: '#a78bfa',
-          rose:   '#fb7185',
-          amber:  '#fbbf24',
-          emerald:'#34d399',
+        // ── Cat Paw Pink ──────────────────────────────────────
+        paw: {
+          50:  '#FFF5F5',
+          100: '#FFE8E8',
+          200: '#FFD8D8',   // highlight pink
+          300: '#FFC0C0',
+          400: '#FF9999',
+          500: '#FF7070',
         },
-        // Glass surfaces
-        glass: {
-          light: 'rgba(255,255,255,0.05)',
-          med:   'rgba(255,255,255,0.08)',
-          heavy:  'rgba(255,255,255,0.12)',
-          border: 'rgba(255,255,255,0.08)',
+        // ── Warm Text Colors ──────────────────────────────────
+        espresso: {
+          900: '#1E1208',
+          800: '#3E2723',   // dark espresso brown — main text
+          700: '#5D3A1A',
+          600: '#795548',
+          500: '#8D6E63',
+          400: '#A1887F',
+          300: '#BCAAA4',
+          200: '#D7CCC8',
+          100: '#EFEBE9',
+        },
+        // ── Deep Navy (high-contrast text) ───────────────────
+        navy: {
+          900: '#0F172A',
+          800: '#1E293B',
+          700: '#334155',
+          600: '#475569',
+          500: '#64748B',
+          400: '#94A3B8',
+          300: '#CBD5E1',
+        },
+        // ── Warm Status Colors ────────────────────────────────
+        status: {
+          backlog:    '#8D6E63',
+          todo:       '#F59E0B',
+          inprogress: '#FF8A65',
+          done:       '#66BB6A',
+          archived:   '#BCAAA4',
         },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'ui-monospace', 'monospace'],
       },
+      fontSize: {
+        // Bumped up ~15-20% across all sizes
+        'xs':  ['0.8125rem',  { lineHeight: '1.2rem' }],   // was 0.75
+        'sm':  ['0.9375rem',  { lineHeight: '1.35rem' }],  // was 0.875
+        'base':['1.0625rem',  { lineHeight: '1.6rem' }],   // was 1
+        'lg':  ['1.1875rem',  { lineHeight: '1.75rem' }],  // was 1.125
+        'xl':  ['1.375rem',   { lineHeight: '1.875rem' }], // was 1.25
+        '2xl': ['1.625rem',   { lineHeight: '2rem' }],
+      },
       backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'glow-brand': 'radial-gradient(ellipse at center, rgba(99,102,241,0.15) 0%, transparent 70%)',
-        'card-shimmer': 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%)',
+        'gradient-warm':   'linear-gradient(135deg, #FFF8ED 0%, #FAF6F0 50%, #F5EBE0 100%)',
+        'gradient-paw':    'linear-gradient(135deg, #FFE8C2 0%, #FFD8D8 100%)',
+        'gradient-orange': 'linear-gradient(135deg, #FFB74D 0%, #E68A00 100%)',
+        'paper-texture':   'repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(230,210,185,0.25) 28px, rgba(230,210,185,0.25) 29px)',
+        'dot-pattern':     'radial-gradient(circle, rgba(200,170,140,0.35) 1px, transparent 1px)',
       },
       boxShadow: {
-        'glow-sm':    '0 0 12px rgba(99,102,241,0.2)',
-        'glow-md':    '0 0 24px rgba(99,102,241,0.25)',
-        'glow-lg':    '0 0 48px rgba(99,102,241,0.3)',
-        'glow-cyan':  '0 0 20px rgba(34,211,238,0.2)',
-        'card':       '0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3)',
-        'card-hover': '0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(99,102,241,0.2)',
-        'drawer':     '-8px 0 40px rgba(0,0,0,0.5)',
-        'inner-top':  'inset 0 1px 0 rgba(255,255,255,0.06)',
+        'warm-sm':    '0 1px 4px rgba(139,90,43,0.08), 0 1px 2px rgba(139,90,43,0.05)',
+        'warm-md':    '0 4px 16px rgba(139,90,43,0.12), 0 2px 6px rgba(139,90,43,0.07)',
+        'warm-lg':    '0 8px 32px rgba(139,90,43,0.16), 0 4px 12px rgba(139,90,43,0.1)',
+        'warm-hover': '0 8px 28px rgba(230,138,0,0.18), 0 2px 8px rgba(139,90,43,0.1)',
+        'card':       '0 2px 8px rgba(139,90,43,0.08), inset 0 1px 0 rgba(255,255,255,0.7)',
+        'card-hover': '0 6px 24px rgba(230,138,0,0.15), 0 2px 8px rgba(139,90,43,0.08)',
+        'sidebar':    '2px 0 16px rgba(139,90,43,0.08)',
+        'drawer':     '-4px 0 24px rgba(139,90,43,0.12)',
+        'paw-glow':   '0 0 12px rgba(255,183,77,0.4)',
+        'orange-glow':'0 0 20px rgba(255,183,77,0.3)',
       },
-      backdropBlur: {
-        xs: '2px',
+      borderRadius: {
+        '2xl': '16px',
+        '3xl': '24px',
+        '4xl': '32px',
       },
       animation: {
-        'slide-in-right':  'slideInRight 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
-        'fade-in':         'fadeIn 0.2s ease-out',
-        'scale-in':        'scaleIn 0.2s cubic-bezier(0.32, 0.72, 0, 1)',
-        'check-pop':       'checkPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-        'float':           'float 6s ease-in-out infinite',
-        'shimmer':         'shimmer 2s linear infinite',
-        'pulse-glow':      'pulseGlow 2s ease-in-out infinite',
+        'slide-in-right': 'slideInRight 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+        'fade-in':        'fadeIn 0.2s ease-out',
+        'scale-in':       'scaleIn 0.2s cubic-bezier(0.32, 0.72, 0, 1)',
+        'check-pop':      'checkPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        'cat-wink':       'catWink 4s ease-in-out infinite',
+        'cat-tail':       'catTail 3s ease-in-out infinite',
+        'cat-sleep':      'catSleep 2s ease-in-out infinite',
+        'cat-stretch':    'catStretch 6s ease-in-out infinite',
+        'paw-bounce':     'pawBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        'float':          'float 5s ease-in-out infinite',
+        'wobble':         'wobble 0.5s ease-in-out',
       },
       keyframes: {
         slideInRight: {
@@ -93,25 +130,45 @@ export default {
           '100%': { opacity: '1' },
         },
         scaleIn: {
-          '0%':   { transform: 'scale(0.92)', opacity: '0' },
-          '100%': { transform: 'scale(1)',    opacity: '1' },
+          '0%':   { transform: 'scale(0.9)', opacity: '0' },
+          '100%': { transform: 'scale(1)',   opacity: '1' },
         },
         checkPop: {
-          '0%':   { transform: 'scale(0.8)',  opacity: '0' },
-          '60%':  { transform: 'scale(1.2)',  opacity: '1' },
+          '0%':   { transform: 'scale(0.7)',  opacity: '0' },
+          '60%':  { transform: 'scale(1.25)', opacity: '1' },
           '100%': { transform: 'scale(1)',    opacity: '1' },
+        },
+        catWink: {
+          '0%, 90%, 100%': { transform: 'scaleY(1)' },
+          '95%':           { transform: 'scaleY(0.1)' },
+        },
+        catTail: {
+          '0%, 100%': { transform: 'rotate(-15deg)' },
+          '50%':      { transform: 'rotate(15deg)' },
+        },
+        catSleep: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%':      { transform: 'translateY(-3px)' },
+        },
+        catStretch: {
+          '0%, 85%, 100%': { transform: 'scaleX(1) scaleY(1)' },
+          '88%':           { transform: 'scaleX(1.15) scaleY(0.88)' },
+          '92%':           { transform: 'scaleX(0.9) scaleY(1.08)' },
+          '95%':           { transform: 'scaleX(1) scaleY(1)' },
+        },
+        pawBounce: {
+          '0%':   { transform: 'translateY(0) scale(1)' },
+          '40%':  { transform: 'translateY(-8px) scale(1.15)' },
+          '100%': { transform: 'translateY(0) scale(1)' },
         },
         float: {
           '0%, 100%': { transform: 'translateY(0px)' },
-          '50%':      { transform: 'translateY(-6px)' },
+          '50%':      { transform: 'translateY(-5px)' },
         },
-        shimmer: {
-          '0%':   { backgroundPosition: '-200% center' },
-          '100%': { backgroundPosition: '200% center' },
-        },
-        pulseGlow: {
-          '0%, 100%': { boxShadow: '0 0 12px rgba(99,102,241,0.2)' },
-          '50%':      { boxShadow: '0 0 24px rgba(99,102,241,0.4)' },
+        wobble: {
+          '0%, 100%': { transform: 'rotate(0deg)' },
+          '25%':      { transform: 'rotate(-8deg)' },
+          '75%':      { transform: 'rotate(8deg)' },
         },
       },
     },

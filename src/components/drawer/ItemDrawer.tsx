@@ -1,96 +1,81 @@
 // ============================================================
-// OmniFlow - Right Drawer: Item Detail Panel — Dark Edition
+// OmniFlow — Item Drawer · Warm Cat Theme Edition 🐾
 // ============================================================
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   X, Trash2, Archive, Calendar, Tag, Flag, Folder,
   Plus, Link2, Clock, ChevronDown, CheckSquare, Square,
-  AlertCircle, Circle, Minus
 } from 'lucide-react';
 import { useApp } from '../../store/useAppStore';
 import type { OmniItem, ItemStatus, ItemPriority, ItemType, SubTask } from '../../types';
 import {
   cn, PRIORITY_DOT_CLASS, PRIORITY_BADGE_CLASS, STATUS_BADGE_CLASS,
-  STATUS_LABEL, PRIORITY_LABEL, generateId, createNewItem
+  STATUS_LABEL, PRIORITY_LABEL, generateId,
 } from '../../lib/utils';
 import { formatDate } from '../../lib/nlp';
 
-// ── Constants ────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────
 const STATUSES: ItemStatus[] = ['Backlog', 'Todo', 'In Progress', 'Done', 'Archived'];
 const STATUS_LABELS: Record<ItemStatus, string> = {
   Backlog: '待處理', Todo: '準備中', 'In Progress': '進行中', Done: '已完成', Archived: '已封存'
 };
 const PRIORITIES: ItemPriority[] = ['High', 'Medium', 'Low', 'None'];
 const PRIORITY_LABELS: Record<ItemPriority, string> = {
-  High: '🔴 高優先', Medium: '🟡 中優先', Low: '🔵 低優先', None: '⚪ 無優先級'
+  High: '🔴 高優先', Medium: '🟡 中優先', Low: '🟢 低優先', None: '⚪ 無優先'
 };
 const TYPES: ItemType[] = ['Inbox', 'Task', 'Project', 'Note'];
 const TYPE_LABELS: Record<ItemType, string> = {
   Inbox: '📥 收件夾', Task: '✅ 任務', Project: '📁 專案', Note: '📝 筆記'
 };
 
-// ── Field Row ────────────────────────────────────────────────
-interface FieldRowProps {
-  icon: React.ReactNode;
-  label: string;
-  children: React.ReactNode;
-}
-
-function FieldRow({ icon, label, children }: FieldRowProps) {
+// ── Field Row ──────────────────────────────────────────────
+function FieldRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-3 py-2.5 border-b border-white/[0.05] last:border-0">
+    <div className="flex items-start gap-3 py-2.5" style={{borderBottom:'1.5px dashed #EDDECC'}}>
       <div className="flex items-center gap-2 w-20 flex-shrink-0 pt-1">
-        <span className="text-slate-500">{icon}</span>
-        <span className="text-xs text-slate-500 font-medium whitespace-nowrap">{label}</span>
+        <span style={{color:'#A1887F'}}>{icon}</span>
+        <span className="text-xs font-bold whitespace-nowrap" style={{color:'#8D6E63'}}>{label}</span>
       </div>
       <div className="flex-1 min-w-0">{children}</div>
     </div>
   );
 }
 
-// ── Select Field ─────────────────────────────────────────────
+// ── Select Field ───────────────────────────────────────────
 function SelectField<T extends string>({
   value, options, labels, onChange, renderOption,
 }: {
-  value: T;
-  options: T[];
-  labels: Record<string, string>;
-  onChange: (v: T) => void;
-  renderOption?: (v: T) => React.ReactNode;
+  value: T; options: T[]; labels: Record<string, string>;
+  onChange: (v: T) => void; renderOption?: (v: T) => React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-
   return (
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-dark-700/60 hover:bg-dark-600/80 border border-white/[0.07] hover:border-white/[0.14] transition-all text-xs font-medium text-slate-300"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl text-xs font-bold transition-all"
+        style={{background:'#FAF6F0', border:'1.5px solid #EDDECC', color:'#3E2723'}}
       >
         {renderOption ? renderOption(value) : labels[value]}
-        <ChevronDown
-          size={11}
-          className={cn('text-slate-500 transition-transform duration-200 ml-0.5', open && 'rotate-180')}
-        />
+        <ChevronDown size={11} className={cn('transition-transform duration-200 ml-0.5', open && 'rotate-180')}
+          style={{color:'#A1887F'}}/>
       </button>
-
       {open && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div
-            className="absolute top-full left-0 mt-1.5 rounded-xl overflow-hidden border border-white/[0.08] shadow-2xl z-50 min-w-40"
-            style={{ background: 'rgba(18,22,34,0.97)', backdropFilter: 'blur(20px)' }}
-          >
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)}/>
+          <div className="absolute top-full left-0 mt-1.5 rounded-2xl overflow-hidden z-50 min-w-40 warm-card animate-fade-in">
             {options.map(opt => (
               <button
                 key={opt}
                 onClick={() => { onChange(opt); setOpen(false); }}
-                className={cn(
-                  'w-full text-left px-3 py-2.5 text-xs transition-colors flex items-center gap-2',
-                  value === opt
-                    ? 'text-indigo-300 bg-indigo-500/10 font-semibold'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
-                )}
+                className="w-full text-left px-3 py-2.5 text-xs font-semibold transition-colors flex items-center gap-2"
+                style={{
+                  color: value === opt ? '#E68A00' : '#3E2723',
+                  background: value === opt ? '#FFF8ED' : 'transparent',
+                }}
+                onMouseEnter={e => { if (value !== opt) (e.currentTarget as HTMLElement).style.background = '#FAF6F0'; }}
+                onMouseLeave={e => { if (value !== opt) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
               >
                 {renderOption ? renderOption(opt) : labels[opt]}
               </button>
@@ -102,378 +87,296 @@ function SelectField<T extends string>({
   );
 }
 
-// ── Date Field ───────────────────────────────────────────────
+// ── Date Field ─────────────────────────────────────────────
 function DateField({ value, onChange, label }: {
-  value: string | undefined;
-  onChange: (v: string | undefined) => void;
-  label: string;
+  value: string | undefined; onChange: (v: string | undefined) => void; label: string;
 }) {
   const [editing, setEditing] = useState(false);
-
   if (editing) {
     return (
       <input
         type="datetime-local"
         defaultValue={value ? value.slice(0, 16) : ''}
-        onChange={e => {
-          if (e.target.value) onChange(new Date(e.target.value).toISOString());
-        }}
+        onChange={e => { if (e.target.value) onChange(new Date(e.target.value).toISOString()); }}
         onBlur={() => setEditing(false)}
         autoFocus
-        className="text-xs border border-indigo-500/40 rounded-lg px-2.5 py-1.5 outline-none focus:ring-1 focus:ring-indigo-500/50 bg-dark-700 text-slate-200 w-full"
+        className="input-warm text-xs px-2.5 py-1.5 w-full"
       />
     );
   }
-
   return (
     <button
       onClick={() => setEditing(true)}
-      className={cn(
-        'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
-        value
-          ? 'bg-amber-500/10 border border-amber-500/25 text-amber-400 hover:bg-amber-500/15'
-          : 'bg-dark-700/60 border border-white/[0.07] text-slate-500 hover:text-slate-300 hover:border-white/[0.14]'
-      )}
+      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl text-xs font-bold transition-all"
+      style={value ? {
+        background: '#FFF8E1', border: '1.5px solid #FFB74D', color: '#E65100'
+      } : {
+        background: '#FAF6F0', border: '1.5px solid #EDDECC', color: '#A1887F'
+      }}
     >
-      <Calendar size={11} />
+      <Calendar size={11}/>
       {value ? formatDate(value) : `設定${label}`}
     </button>
   );
 }
 
-// ── Tags Field ───────────────────────────────────────────────
+// ── Tags Field ─────────────────────────────────────────────
 function TagsField({ tags, onChange }: { tags: string[]; onChange: (tags: string[]) => void }) {
   const [input, setInput] = useState('');
-
   function addTag() {
     const tag = input.trim().replace(/^#/, '');
     if (tag && !tags.includes(tag)) onChange([...tags, tag]);
     setInput('');
   }
-
-  function removeTag(tag: string) {
-    onChange(tags.filter(t => t !== tag));
-  }
-
+  function removeTag(tag: string) { onChange(tags.filter(t => t !== tag)); }
   return (
     <div className="flex flex-wrap gap-1.5 items-center">
       {tags.map(tag => (
-        <span
-          key={tag}
-          className="flex items-center gap-1 text-xs text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20"
-        >
+        <span key={tag} className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full"
+          style={{background:'#FFE8C2', border:'1.5px solid #FFB74D', color:'#E65100'}}>
           #{tag}
-          <button
-            onClick={() => removeTag(tag)}
-            className="text-indigo-400/60 hover:text-indigo-300 transition-colors"
-          >
-            <X size={10} />
-          </button>
+          <button onClick={() => removeTag(tag)} style={{color:'#E68A00'}} className="hover:opacity-70"><X size={10}/></button>
         </span>
       ))}
       <input
-        type="text"
-        value={input}
-        onChange={e => setInput(e.target.value)}
-        onKeyDown={e => {
-          if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(); }
-        }}
+        type="text" value={input} onChange={e => setInput(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(); } }}
         placeholder="新增標籤..."
-        className="text-xs outline-none bg-transparent text-slate-400 placeholder-slate-600 w-20"
+        className="text-xs outline-none bg-transparent font-semibold"
+        style={{color:'#8D6E63', width:'80px'}}
       />
     </div>
   );
 }
 
-// ── Subtask List ─────────────────────────────────────────────
+// ── Cat Paw Subtask List ───────────────────────────────────
 function SubtaskList({ subtasks = [], onChange }: {
-  subtasks: SubTask[];
-  onChange: (subtasks: SubTask[]) => void;
+  subtasks: SubTask[]; onChange: (subtasks: SubTask[]) => void;
 }) {
   const [newTitle, setNewTitle] = useState('');
-  const done = subtasks.filter(s => s.done).length;
+  const done    = subtasks.filter(s => s.done).length;
   const percent = subtasks.length > 0 ? Math.round((done / subtasks.length) * 100) : 0;
 
   function addSubtask() {
     const title = newTitle.trim();
     if (!title) return;
-    const newSubtask: SubTask = {
-      id: generateId(),
-      title,
-      done: false,
-      created_at: new Date().toISOString(),
-    };
-    onChange([...subtasks, newSubtask]);
+    onChange([...subtasks, { id: generateId(), title, done: false, created_at: new Date().toISOString() }]);
     setNewTitle('');
   }
 
-  function toggleSubtask(id: string) {
-    onChange(subtasks.map(s => s.id === id ? { ...s, done: !s.done } : s));
-  }
-
-  function deleteSubtask(id: string) {
-    onChange(subtasks.filter(s => s.id !== id));
-  }
+  function toggleSubtask(id: string) { onChange(subtasks.map(s => s.id === id ? { ...s, done: !s.done } : s)); }
+  function deleteSubtask(id: string)  { onChange(subtasks.filter(s => s.id !== id)); }
 
   return (
     <div className="space-y-1">
-      {/* Progress bar */}
+      {/* Cat paw progress bar */}
       {subtasks.length > 0 && (
-        <div className="flex items-center gap-2.5 mb-3">
-          <div className="flex-1 bg-dark-700 rounded-full h-1.5 overflow-hidden">
-            <div
-              className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-1.5 rounded-full transition-all duration-500"
-              style={{ width: `${percent}%` }}
-            />
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs font-bold" style={{color:'#8D6E63'}}>{done}/{subtasks.length} 子任務</span>
+            <span className="text-xs font-bold" style={{color: percent === 100 ? '#2E7D32' : '#E65100'}}>
+              {percent === 100 ? '🎉 完成！' : `${percent}%`}
+            </span>
           </div>
-          <span className="text-xs text-slate-500 tabular-nums">{done}/{subtasks.length}</span>
+          {/* Track */}
+          <div className="relative h-5 rounded-full cat-progress-track">
+            <div className="cat-progress-fill h-full absolute left-0 top-0 rounded-full"
+              style={{width:`${Math.min(percent, 95)}%`}}/>
+            <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 transition-all duration-700"
+              style={{left:`${Math.max(8, Math.min(percent, 94))}%`}}>
+              <span className="text-sm">🐾</span>
+            </div>
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 text-sm">
+              {percent >= 100 ? '💀' : '🐟'}
+            </div>
+          </div>
         </div>
       )}
 
       {/* Subtask items */}
       {subtasks.map(sub => (
-        <div key={sub.id} className="flex items-center gap-2 group py-1.5 px-2 rounded-lg hover:bg-dark-700/40 transition-colors">
+        <div key={sub.id} className="flex items-center gap-2 group py-1.5 px-2 rounded-xl transition-colors"
+          style={{}} onMouseEnter={e => (e.currentTarget as HTMLElement).style.background='#FAF6F0'}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background='transparent'}>
           <button
             onClick={() => toggleSubtask(sub.id)}
-            className={cn(
-              'flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-all duration-200',
-              sub.done
-                ? 'bg-emerald-500 border-emerald-500 shadow-[0_0_6px_rgba(52,211,153,0.4)]'
-                : 'border-slate-600 hover:border-emerald-400'
-            )}
+            className="flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
+            style={sub.done ? {
+              background:'#FFB74D', borderColor:'#FFB74D', boxShadow:'0 0 6px rgba(255,183,77,0.5)'
+            } : {
+              borderColor:'#EDDECC', background:'#FFF'
+            }}
           >
-            {sub.done && (
-              <svg width="8" height="8" viewBox="0 0 10 8" fill="none">
-                <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            )}
+            {sub.done && <span className="text-xs text-white">🐾</span>}
           </button>
-          <span className={cn('flex-1 text-xs', sub.done ? 'line-through text-slate-600' : 'text-slate-300')}>
-            {sub.title}
-          </span>
-          <button
-            onClick={() => deleteSubtask(sub.id)}
-            className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-red-400 transition-all"
-          >
-            <X size={11} />
+          <span className={cn('flex-1 text-xs font-semibold', sub.done && 'line-through opacity-50')}
+            style={{color:'#3E2723'}}>{sub.title}</span>
+          <button onClick={() => deleteSubtask(sub.id)}
+            className="opacity-0 group-hover:opacity-100 transition-all"
+            style={{color:'#BCAAA4'}}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color='#EF5350'}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color='#BCAAA4'}>
+            <X size={11}/>
           </button>
         </div>
       ))}
 
-      {/* Add subtask input */}
+      {/* Add subtask */}
       <div className="flex items-center gap-2 px-2 pt-1.5">
-        <Plus size={12} className="text-slate-600 flex-shrink-0" />
+        <Plus size={12} style={{color:'#BCAAA4'}} className="flex-shrink-0"/>
         <input
-          type="text"
-          value={newTitle}
-          onChange={e => setNewTitle(e.target.value)}
+          type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') addSubtask(); }}
           placeholder="新增子任務..."
-          className="flex-1 text-xs text-slate-400 placeholder-slate-600 outline-none bg-transparent"
+          className="flex-1 text-xs outline-none bg-transparent font-semibold"
+          style={{color:'#3E2723'}}
         />
       </div>
     </div>
   );
 }
 
-// ── Priority Render Helper ────────────────────────────────────
-function PriorityOption({ value }: { value: ItemPriority }) {
-  return (
-    <span className={cn('flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium', PRIORITY_BADGE_CLASS[value])}>
-      <span className={cn('w-1.5 h-1.5 rounded-full', PRIORITY_DOT_CLASS[value])} />
-      {PRIORITY_LABELS[value].replace(/^[🔴🟡🔵⚪]\s/, '')}
-    </span>
-  );
-}
-
-// ── Status Render Helper ──────────────────────────────────────
-function StatusOption({ value }: { value: ItemStatus }) {
-  return (
-    <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', STATUS_BADGE_CLASS[value])}>
-      {STATUS_LABELS[value]}
-    </span>
-  );
-}
-
-// ── Main Drawer ───────────────────────────────────────────────
+// ── Main Drawer ────────────────────────────────────────────
 export function ItemDrawer() {
   const { selectedItem, setSelectedItemId, updateItem, removeItem, items } = useApp();
   const item = selectedItem;
-
   if (!item) return null;
 
-  function update(changes: Partial<OmniItem>) {
-    if (!item) return;
-    updateItem(item.id, changes);
-  }
+  function update(changes: Partial<OmniItem>) { if (!item) return; updateItem(item.id, changes); }
 
   async function handleDelete() {
     if (!item) return;
-    if (confirm(`確定要刪除「${item.title}」嗎？`)) {
-      await removeItem(item.id);
-    }
+    if (confirm(`確定要刪除「${item.title}」嗎？🐾`)) { await removeItem(item.id); }
   }
 
   const linkedItems = items.filter(i => item.backlinks?.includes(i.id) && i.id !== item.id);
-  const projects = items.filter(i => i.type === 'Project');
+  const projects    = items.filter(i => i.type === 'Project');
 
   return (
-    <div
-      className="w-96 flex flex-col h-full border-l border-white/[0.06] animate-slide-in-right"
-      style={{ background: 'rgba(14,18,28,0.95)', backdropFilter: 'blur(20px)' }}
-    >
-      {/* Drawer Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
-        <SelectField
-          value={item.type}
-          options={TYPES}
-          labels={TYPE_LABELS}
-          onChange={v => update({ type: v })}
-        />
+    <div className="w-96 flex flex-col h-full animate-slide-in-right"
+      style={{background:'#FDFBF7', borderLeft:'1.5px dashed #EDDECC', boxShadow:'-4px 0 24px rgba(139,90,43,0.08)'}}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4" style={{borderBottom:'1.5px dashed #EDDECC', background:'#FFF8ED'}}>
+        <SelectField value={item.type} options={TYPES} labels={TYPE_LABELS} onChange={v => update({ type: v })}/>
         <div className="flex items-center gap-0.5">
-          <button
-            onClick={() => update({ status: 'Archived' })}
-            className="p-1.5 rounded-lg hover:bg-dark-600 text-slate-500 hover:text-slate-300 transition-all"
-            title="封存"
-          >
-            <Archive size={14} />
+          <button onClick={() => update({ status: 'Archived' })} className="btn-ghost-warm p-1.5" title="封存">
+            <Archive size={14}/>
           </button>
-          <button
-            onClick={handleDelete}
-            className="p-1.5 rounded-lg hover:bg-red-500/10 text-slate-500 hover:text-red-400 transition-all"
-            title="刪除"
-          >
-            <Trash2 size={14} />
+          <button onClick={handleDelete} className="p-1.5 rounded-xl transition-all btn-ghost-warm" title="刪除"
+            style={{color:'#A1887F'}}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color='#EF5350'}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color='#A1887F'}>
+            <Trash2 size={14}/>
           </button>
-          <button
-            onClick={() => setSelectedItemId(null)}
-            className="p-1.5 rounded-lg hover:bg-dark-600 text-slate-500 hover:text-slate-300 transition-all"
-          >
-            <X size={14} />
-          </button>
+          <button onClick={() => setSelectedItemId(null)} className="btn-ghost-warm p-1.5"><X size={14}/></button>
         </div>
       </div>
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-dark-600 scrollbar-track-transparent">
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto">
         {/* Title */}
-        <div className="px-5 py-4 border-b border-white/[0.05]">
+        <div className="px-5 py-4" style={{borderBottom:'1.5px dashed #EDDECC'}}>
           <textarea
-            value={item.title}
-            onChange={e => update({ title: e.target.value })}
-            className="w-full text-base font-bold text-white resize-none outline-none leading-snug placeholder-slate-600 bg-transparent"
-            placeholder="標題..."
-            rows={2}
+            value={item.title} onChange={e => update({ title: e.target.value })}
+            className="w-full text-base font-extrabold resize-none outline-none leading-snug bg-transparent"
+            style={{color:'#3E2723'}} placeholder="標題..." rows={2}
           />
         </div>
 
-        {/* Fields Block */}
+        {/* Fields */}
         <div className="px-5 py-2">
-          <FieldRow icon={<Flag size={12} />} label="狀態">
-            <SelectField
-              value={item.status}
-              options={STATUSES}
-              labels={STATUS_LABELS}
+          <FieldRow icon={<Flag size={12}/>} label="狀態">
+            <SelectField value={item.status} options={STATUSES} labels={STATUS_LABELS}
               onChange={v => update({ status: v })}
-              renderOption={v => <StatusOption value={v as ItemStatus} />}
+              renderOption={v => (
+                <span className={cn('px-2 py-0.5 rounded-full text-xs font-bold', STATUS_BADGE_CLASS[v as ItemStatus])}>
+                  {STATUS_LABELS[v as ItemStatus]}
+                </span>
+              )}
             />
           </FieldRow>
 
-          <FieldRow icon={<AlertCircle size={12} />} label="優先">
-            <SelectField
-              value={item.priority}
-              options={PRIORITIES}
-              labels={PRIORITY_LABELS}
+          <FieldRow icon={<Flag size={12}/>} label="優先">
+            <SelectField value={item.priority} options={PRIORITIES} labels={PRIORITY_LABELS}
               onChange={v => update({ priority: v })}
-              renderOption={v => <PriorityOption value={v as ItemPriority} />}
+              renderOption={v => (
+                <span className={cn('flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-bold', PRIORITY_BADGE_CLASS[v as ItemPriority])}>
+                  <span className={cn('w-1.5 h-1.5 rounded-full', PRIORITY_DOT_CLASS[v as ItemPriority])}/>
+                  {PRIORITY_LABELS[v as ItemPriority].replace(/^[🔴🟡🟢⚪]\s/,'')}
+                </span>
+              )}
             />
           </FieldRow>
 
-          <FieldRow icon={<Calendar size={12} />} label="開始">
-            <DateField
-              value={item.start_date}
-              onChange={v => update({ start_date: v })}
-              label="開始時間"
-            />
+          <FieldRow icon={<Calendar size={12}/>} label="開始">
+            <DateField value={item.start_date} onChange={v => update({ start_date: v })} label="開始時間"/>
           </FieldRow>
 
-          <FieldRow icon={<Clock size={12} />} label="截止">
-            <DateField
-              value={item.due_date}
-              onChange={v => update({ due_date: v })}
-              label="截止時間"
-            />
+          <FieldRow icon={<Clock size={12}/>} label="截止">
+            <DateField value={item.due_date} onChange={v => update({ due_date: v })} label="截止時間"/>
           </FieldRow>
 
           {item.type === 'Task' && (
-            <FieldRow icon={<Folder size={12} />} label="專案">
+            <FieldRow icon={<Folder size={12}/>} label="專案">
               <select
                 value={item.project_id || ''}
                 onChange={e => update({ project_id: e.target.value || null })}
-                className="text-xs border border-white/[0.07] rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500/40 text-slate-300 bg-dark-700/60 appearance-none cursor-pointer"
+                className="input-warm text-xs px-2.5 py-1.5 appearance-none cursor-pointer"
               >
-                <option value="" className="bg-dark-800 text-slate-400">無專案</option>
-                {projects.map(p => (
-                  <option key={p.id} value={p.id} className="bg-dark-800 text-slate-200">{p.title}</option>
-                ))}
+                <option value="">無專案</option>
+                {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
               </select>
             </FieldRow>
           )}
 
-          <FieldRow icon={<Tag size={12} />} label="標籤">
-            <TagsField
-              tags={item.tags}
-              onChange={tags => update({ tags })}
-            />
+          <FieldRow icon={<Tag size={12}/>} label="標籤">
+            <TagsField tags={item.tags} onChange={tags => update({ tags })}/>
           </FieldRow>
         </div>
 
-        {/* Content / Notes */}
-        <div className="px-5 py-4 border-t border-white/[0.05]">
-          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2.5">
-            內容 / 備忘
+        {/* Content */}
+        <div className="px-5 py-4" style={{borderTop:'1.5px dashed #EDDECC'}}>
+          <label className="text-xs font-bold uppercase tracking-wider block mb-2.5" style={{color:'#8D6E63'}}>
+            📝 內容 / 備忘
           </label>
           <textarea
-            value={item.content}
-            onChange={e => update({ content: e.target.value })}
+            value={item.content} onChange={e => update({ content: e.target.value })}
             placeholder="新增備忘錄... 支援 Markdown 語法"
             rows={5}
-            className="w-full text-sm text-slate-300 resize-none outline-none leading-relaxed placeholder-slate-600 font-mono bg-dark-800/60 rounded-xl p-3.5 border border-white/[0.06] focus:border-indigo-500/30 focus:bg-dark-800/80 transition-all"
+            className="input-warm w-full text-sm leading-relaxed font-mono p-3.5"
+            style={{resize:'none'}}
           />
         </div>
 
-        {/* Subtasks (for Task/Project) */}
+        {/* Subtasks */}
         {(item.type === 'Task' || item.type === 'Project') && (
-          <div className="px-5 py-4 border-t border-white/[0.05]">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-3">
-              子任務
+          <div className="px-5 py-4" style={{borderTop:'1.5px dashed #EDDECC'}}>
+            <label className="text-xs font-bold uppercase tracking-wider block mb-3" style={{color:'#8D6E63'}}>
+              🐾 子任務
             </label>
-            <SubtaskList
-              subtasks={item.subtasks || []}
-              onChange={subtasks => update({ subtasks })}
-            />
+            <SubtaskList subtasks={item.subtasks || []} onChange={subtasks => update({ subtasks })}/>
           </div>
         )}
 
-        {/* Linked References (Backlinks) */}
+        {/* Backlinks */}
         {linkedItems.length > 0 && (
-          <div className="px-5 py-4 border-t border-white/[0.05]">
+          <div className="px-5 py-4" style={{borderTop:'1.5px dashed #EDDECC'}}>
             <div className="flex items-center gap-2 mb-3">
-              <Link2 size={12} className="text-indigo-400" />
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <Link2 size={12} style={{color:'#E68A00'}}/>
+              <label className="text-xs font-bold uppercase tracking-wider" style={{color:'#8D6E63'}}>
                 雙向連結 ({linkedItems.length})
               </label>
             </div>
             <div className="space-y-1.5">
               {linkedItems.map(linked => (
-                <button
-                  key={linked.id}
-                  onClick={() => setSelectedItemId(linked.id)}
-                  className="w-full text-left p-2.5 rounded-xl bg-indigo-500/5 hover:bg-indigo-500/10 border border-indigo-500/15 hover:border-indigo-500/25 transition-all group"
-                >
+                <button key={linked.id} onClick={() => setSelectedItemId(linked.id)}
+                  className="w-full text-left p-2.5 rounded-2xl transition-all group warm-card"
+                  style={{background:'#FFF8ED', borderColor:'#FFB74D'}}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.boxShadow='0 2px 8px rgba(255,183,77,0.2)'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.boxShadow=''}>
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs">{linked.type === 'Note' ? '📝' : linked.type === 'Project' ? '📁' : '✅'}</span>
-                    <span className="text-xs font-medium text-indigo-300 group-hover:text-indigo-200 transition-colors truncate">{linked.title}</span>
+                    <span className="text-xs font-bold truncate" style={{color:'#E65100'}}>{linked.title}</span>
                   </div>
                 </button>
               ))}
@@ -481,11 +384,11 @@ export function ItemDrawer() {
           </div>
         )}
 
-        {/* Meta info */}
-        <div className="px-5 py-4 border-t border-white/[0.04] space-y-1">
-          <p className="text-xs text-slate-600">建立於 {new Date(item.created_at).toLocaleString('zh-TW')}</p>
-          <p className="text-xs text-slate-600">更新於 {new Date(item.updated_at).toLocaleString('zh-TW')}</p>
-          <p className="font-mono text-slate-700 text-[10px] truncate mt-1">ID: {item.id}</p>
+        {/* Meta */}
+        <div className="px-5 py-4 space-y-1" style={{borderTop:'1.5px dashed #EDDECC'}}>
+          <p className="text-xs font-medium" style={{color:'#BCAAA4'}}>建立於 {new Date(item.created_at).toLocaleString('zh-TW')}</p>
+          <p className="text-xs font-medium" style={{color:'#BCAAA4'}}>更新於 {new Date(item.updated_at).toLocaleString('zh-TW')}</p>
+          <p className="font-mono text-xs truncate mt-1" style={{color:'#D7CCC8'}}>ID: {item.id}</p>
         </div>
       </div>
     </div>

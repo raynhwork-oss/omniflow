@@ -1,5 +1,5 @@
 // ============================================================
-// OmniFlow - Utility Functions (Dark Mode Edition)
+// OmniFlow - Utility Functions (Warm Cat Theme Edition)
 // ============================================================
 
 import type { OmniItem, ItemType, ItemStatus, ItemPriority } from '../types';
@@ -29,7 +29,7 @@ export function createNewItem(
     type: overrides.type ?? 'Inbox',
     status: overrides.status ?? 'Todo',
     priority: overrides.priority ?? 'None',
-    start_date: overrides.start_date ?? todayIso(),   // ← default today
+    start_date: overrides.start_date ?? todayIso(),
     due_date: overrides.due_date,
     project_id: overrides.project_id ?? null,
     tags: overrides.tags ?? [],
@@ -43,12 +43,12 @@ export function createNewItem(
 
 export const ANONYMOUS_USER_ID = 'anonymous';
 
-// ── Priority ─────────────────────────────────────────────────
+// ── Priority (Warm Theme) ─────────────────────────────────
 export const PRIORITY_DOT_CLASS: Record<ItemPriority, string> = {
   High:   'priority-dot-high',
   Medium: 'priority-dot-medium',
   Low:    'priority-dot-low',
-  None:   'bg-slate-600',
+  None:   'bg-espresso-300',
 };
 
 export const PRIORITY_BADGE_CLASS: Record<ItemPriority, string> = {
@@ -62,15 +62,15 @@ export const PRIORITY_LABEL: Record<ItemPriority, string> = {
   High: '高', Medium: '中', Low: '低', None: '—',
 };
 
-// Legacy aliases (kept for compat)
+// Legacy aliases kept for compat
 export const PRIORITY_COLORS: Record<ItemPriority, string> = {
-  High: 'text-rose-400', Medium: 'text-amber-400', Low: 'text-blue-400', None: 'text-slate-500',
+  High: 'text-red-600', Medium: 'text-orange-500', Low: 'text-green-600', None: 'text-espresso-400',
 };
 export const PRIORITY_BG: Record<ItemPriority, string> = {
   High: 'badge-high', Medium: 'badge-medium', Low: 'badge-low', None: 'badge-none',
 };
 
-// ── Status ───────────────────────────────────────────────────
+// ── Status (Warm Theme) ───────────────────────────────────
 export const STATUS_BADGE_CLASS: Record<ItemStatus, string> = {
   Backlog:      'badge-backlog',
   Todo:         'badge-todo',
@@ -84,12 +84,12 @@ export const STATUS_LABEL: Record<ItemStatus, string> = {
   Backlog: '待處理', Todo: '準備中', 'In Progress': '進行中', Done: '已完成', Archived: '已封存',
 };
 
-// ── Type ─────────────────────────────────────────────────────
+// ── Type ─────────────────────────────────────────────────
 export const TYPE_ICONS: Record<ItemType, string> = {
   Inbox: '📥', Task: '✅', Project: '📁', Note: '📝',
 };
 
-// ── Helpers ──────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────
 export function cn(...classes: (string | undefined | null | false)[]): string {
   return classes.filter(Boolean).join(' ');
 }

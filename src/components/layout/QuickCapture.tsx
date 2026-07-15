@@ -1,9 +1,9 @@
 // ============================================================
-// OmniFlow — Quick Capture · Dark Edition
+// OmniFlow — Quick Capture · Warm Cat Theme Edition 🐾
 // ============================================================
 
 import React, { useState, useRef } from 'react';
-import { Plus, Zap, Tag, Calendar, AlertTriangle, Sparkles } from 'lucide-react';
+import { Plus, Tag, Calendar, AlertTriangle, Sparkles } from 'lucide-react';
 import { useApp } from '../../store/useAppStore';
 import { parseNaturalInput } from '../../lib/nlp';
 import { createNewItem, ANONYMOUS_USER_ID, cn, PRIORITY_BADGE_CLASS, PRIORITY_LABEL } from '../../lib/utils';
@@ -45,32 +45,39 @@ export function QuickCapture() {
     <div className="relative">
       {/* Input bar */}
       <div className={cn(
-        'flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-200',
-        'bg-dark-600 border',
-        focused
-          ? 'border-brand-500/50 shadow-glow-sm'
-          : 'border-white/07 hover:border-white/12',
+        'flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-200 warm-card',
+        focused && 'border-orange-300 shadow-warm-md',
       )}>
-        <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center flex-shrink-0 shadow-glow-sm">
-          <Plus size={15} className="text-white"/>
-        </div>
+        {/* Cat paw add button */}
+        <button
+          onClick={handleSubmit}
+          className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all btn-warm hover:scale-110 active:scale-95"
+          style={{background:'linear-gradient(135deg, #FFB74D, #E68A00)'}}
+          title="新增 (Enter)"
+        >
+          <span className="text-base leading-none">🐾</span>
+        </button>
 
         <input
           ref={inputRef}
           type="text"
           value={input}
           onChange={e => handleChange(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSubmit(); } if (e.key === 'Escape') { setInput(''); setPreview(null); inputRef.current?.blur(); } }}
+          onKeyDown={e => {
+            if (e.key === 'Enter') { e.preventDefault(); handleSubmit(); }
+            if (e.key === 'Escape') { setInput(''); setPreview(null); inputRef.current?.blur(); }
+          }}
           onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          onBlur={() => setTimeout(() => setFocused(false), 150)}
           placeholder="快速捕捉… 試試「明天下午3點開會 #工作 !高」"
-          className="flex-1 text-sm text-slate-200 placeholder-slate-600 outline-none bg-transparent"
+          className="flex-1 text-sm outline-none bg-transparent font-medium"
+          style={{color:'#3E2723'}}
         />
 
         {input && (
           <button
             onClick={handleSubmit}
-            className="flex-shrink-0 bg-brand-600 hover:bg-brand-500 text-white px-4 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-glow-sm"
+            className="flex-shrink-0 btn-warm px-4 py-1.5 text-xs"
           >
             新增
           </button>
@@ -79,38 +86,36 @@ export function QuickCapture() {
 
       {/* NLP Preview popover */}
       {preview && focused && input.trim().length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 glass-card p-4 z-50 animate-fade-in">
+        <div className="absolute top-full left-0 right-0 mt-2 warm-card p-4 z-50 animate-fade-in" style={{zIndex:50}}>
           <div className="flex items-center gap-2 mb-3">
-            <Sparkles size={13} className="text-brand-400"/>
-            <span className="text-xs font-semibold text-brand-300 uppercase tracking-wider">AI 解析預覽</span>
+            <span className="text-sm">✨</span>
+            <span className="text-xs font-bold uppercase tracking-wider" style={{color:'#E68A00'}}>NLP 解析預覽</span>
           </div>
 
           <div className="space-y-2">
-            {/* Title */}
             <div className="flex items-center gap-3">
-              <span className="text-xs text-slate-600 w-10 flex-shrink-0">標題</span>
-              <span className="text-sm font-medium text-slate-200">{preview.title || '(空白)'}</span>
+              <span className="text-xs font-semibold w-10 flex-shrink-0" style={{color:'#A1887F'}}>標題</span>
+              <span className="text-sm font-semibold" style={{color:'#3E2723'}}>{preview.title || '(空白)'}</span>
             </div>
 
-            {/* Date */}
             {preview.due_date && (
               <div className="flex items-center gap-3">
-                <Calendar size={12} className="text-slate-600 flex-shrink-0"/>
-                <span className="text-xs text-slate-600 w-8 flex-shrink-0">時間</span>
-                <span className="text-sm text-amber-300 font-medium">
+                <Calendar size={13} style={{color:'#A1887F'}} className="flex-shrink-0"/>
+                <span className="text-xs font-semibold w-8 flex-shrink-0" style={{color:'#A1887F'}}>時間</span>
+                <span className="text-sm font-bold" style={{color:'#E65100'}}>
                   {new Date(preview.due_date).toLocaleString('zh-TW', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
             )}
 
-            {/* Tags */}
             {preview.tags.length > 0 && (
               <div className="flex items-center gap-3">
-                <Tag size={12} className="text-slate-600 flex-shrink-0"/>
-                <span className="text-xs text-slate-600 w-8 flex-shrink-0">標籤</span>
+                <Tag size={13} style={{color:'#A1887F'}} className="flex-shrink-0"/>
+                <span className="text-xs font-semibold w-8 flex-shrink-0" style={{color:'#A1887F'}}>標籤</span>
                 <div className="flex gap-1 flex-wrap">
                   {preview.tags.map(t => (
-                    <span key={t} className="text-xs bg-brand-600/20 border border-brand-500/30 text-brand-300 px-2 py-0.5 rounded-full">
+                    <span key={t} className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                      style={{background:'#FFE8C2', border:'1.5px solid #FFB74D', color:'#E65100'}}>
                       #{t}
                     </span>
                   ))}
@@ -118,20 +123,20 @@ export function QuickCapture() {
               </div>
             )}
 
-            {/* Priority */}
             {preview.priority && preview.priority !== 'None' && (
               <div className="flex items-center gap-3">
-                <AlertTriangle size={12} className="text-slate-600 flex-shrink-0"/>
-                <span className="text-xs text-slate-600 w-8 flex-shrink-0">優先</span>
-                <span className={cn('text-xs font-semibold px-2 py-0.5 rounded-full', PRIORITY_BADGE_CLASS[preview.priority])}>
+                <AlertTriangle size={13} style={{color:'#A1887F'}} className="flex-shrink-0"/>
+                <span className="text-xs font-semibold w-8 flex-shrink-0" style={{color:'#A1887F'}}>優先</span>
+                <span className={cn('text-xs font-bold px-2.5 py-0.5 rounded-full', PRIORITY_BADGE_CLASS[preview.priority])}>
                   {PRIORITY_LABEL[preview.priority]}優先
                 </span>
               </div>
             )}
           </div>
 
-          <div className="mt-3 pt-3 border-t border-white/06 text-xs text-slate-600">
-            按 <kbd className="px-1.5 py-0.5 bg-dark-500 border border-white/10 text-slate-400 rounded text-xs font-mono">Enter</kbd> 確認
+          <div className="mt-3 pt-3 text-xs font-medium" style={{borderTop:'1.5px dashed #EDDECC', color:'#A1887F'}}>
+            按 <kbd className="px-1.5 py-0.5 rounded-lg text-xs font-bold mx-0.5"
+              style={{background:'#F5EBE0', border:'1.5px solid #EDDECC', color:'#5D3A1A'}}>Enter</kbd> 確認新增 🐾
           </div>
         </div>
       )}

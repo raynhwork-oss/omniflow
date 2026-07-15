@@ -1,7 +1,5 @@
 // ============================================================
-// OmniFlow — KanbanView · Fixed DnD + Dark Edition
-// Key fix: each column is a droppable zone via useDroppable.
-// Cards use useSortable; cross-column drag detected in onDragOver.
+// OmniFlow — KanbanView · Warm Cat Theme + DnD Fixed 🐾
 // ============================================================
 
 import React, { useState, useRef } from 'react';
@@ -12,21 +10,25 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus, Kanban, Folder, ChevronDown, ChevronRight, X, Check } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, X, Check, Folder } from 'lucide-react';
 import { useApp } from '../../store/useAppStore';
 import { ItemCard } from '../items/ItemCard';
 import type { OmniItem, ItemStatus } from '../../types';
 import { cn, createNewItem, ANONYMOUS_USER_ID } from '../../lib/utils';
 
-/* ── Column config ─────────────────────────────────────── */
+/* ── Warm column config ─────────────────────────────────── */
 const COLUMNS: {
-  id: ItemStatus; label: string;
-  topColor: string; dotColor: string; glowClass: string;
+  id: ItemStatus; label: string; emoji: string;
+  headerBg: string; borderColor: string; dotColor: string;
 }[] = [
-  { id: 'Backlog',     label: '待處理', topColor: 'border-t-slate-500',   dotColor: 'bg-slate-400',   glowClass: '' },
-  { id: 'Todo',        label: '準備中', topColor: 'border-t-cyan-400',    dotColor: 'bg-cyan-400',    glowClass: 'shadow-[0_0_8px_rgba(34,211,238,0.3)]' },
-  { id: 'In Progress', label: '進行中', topColor: 'border-t-violet-400',  dotColor: 'bg-violet-400',  glowClass: 'shadow-[0_0_8px_rgba(167,139,250,0.3)]' },
-  { id: 'Done',        label: '已完成', topColor: 'border-t-emerald-400', dotColor: 'bg-emerald-400', glowClass: 'shadow-[0_0_8px_rgba(52,211,153,0.3)]' },
+  { id: 'Backlog',     label: '待處理', emoji: '📋',
+    headerBg: '#EFEBE9', borderColor: '#BCAAA4', dotColor: '#8D6E63' },
+  { id: 'Todo',        label: '準備中', emoji: '📌',
+    headerBg: '#FFF8E1', borderColor: '#FFB74D', dotColor: '#E65100' },
+  { id: 'In Progress', label: '進行中', emoji: '🔥',
+    headerBg: '#FFF3E0', borderColor: '#FF8A65', dotColor: '#BF360C' },
+  { id: 'Done',        label: '已完成', emoji: '🎉',
+    headerBg: '#E8F5E9', borderColor: '#66BB6A', dotColor: '#1B5E20' },
 ];
 
 /* ── Sortable card wrapper ──────────────────────────────── */
@@ -35,12 +37,7 @@ function SortableCard({ item }: { item: OmniItem }) {
     id: item.id,
     data: { type: 'card', status: item.status },
   });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
+  const style = { transform: CSS.Transform.toString(transform), transition };
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners} data-dragging={isDragging}>
       <ItemCard item={item} compact/>
@@ -52,33 +49,29 @@ function SortableCard({ item }: { item: OmniItem }) {
 function InlineAdd({ onAdd, onCancel }: { onAdd: (title: string) => void; onCancel: () => void }) {
   const [val, setVal] = useState('');
   const ref = useRef<HTMLTextAreaElement>(null);
-
   React.useEffect(() => { ref.current?.focus(); }, []);
 
   return (
-    <div className="mt-2 glass-card p-2.5 animate-fade-in">
+    <div className="mt-2 warm-card p-3 animate-fade-in">
       <textarea
-        ref={ref}
-        value={val}
-        onChange={e => setVal(e.target.value)}
+        ref={ref} value={val} onChange={e => setVal(e.target.value)}
         onKeyDown={e => {
           if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (val.trim()) onAdd(val.trim()); }
           if (e.key === 'Escape') onCancel();
         }}
         placeholder="輸入任務標題…"
         rows={2}
-        className="w-full bg-transparent text-sm text-slate-200 placeholder-slate-600 outline-none resize-none"
+        className="w-full bg-transparent text-sm outline-none resize-none font-medium"
+        style={{color:'#3E2723'}}
       />
       <div className="flex items-center gap-1.5 mt-2">
         <button
           onClick={() => { if (val.trim()) onAdd(val.trim()); }}
-          className="flex items-center gap-1 px-3 py-1.5 bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium rounded-lg transition-all shadow-glow-sm"
+          className="btn-warm flex items-center gap-1 px-3 py-1.5 text-xs"
         >
           <Check size={11}/> 新增
         </button>
-        <button onClick={onCancel} className="p-1.5 rounded-lg btn-ghost text-slate-500">
-          <X size={13}/>
-        </button>
+        <button onClick={onCancel} className="btn-ghost-warm p-1.5"><X size={13}/></button>
       </div>
     </div>
   );
@@ -88,10 +81,8 @@ function InlineAdd({ onAdd, onCancel }: { onAdd: (title: string) => void; onCanc
 function KanbanColumn({
   col, items, isOver, onAddItem,
 }: {
-  col: typeof COLUMNS[0];
-  items: OmniItem[];
-  isOver: boolean;
-  onAddItem: (status: ItemStatus, title: string) => void;
+  col: typeof COLUMNS[0]; items: OmniItem[];
+  isOver: boolean; onAddItem: (status: ItemStatus, title: string) => void;
 }) {
   const { setNodeRef } = useDroppable({ id: col.id });
   const [collapsed, setCollapsed] = useState(false);
@@ -100,48 +91,50 @@ function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={cn(
-        'flex flex-col rounded-2xl border-t-4 min-w-[270px] max-w-[300px] flex-shrink-0',
-        'bg-dark-600/60 border border-white/07 transition-all duration-200',
-        col.topColor,
-        isOver && 'bg-dark-500/80 border-brand-500/30 kanban-drop-active',
-      )}
+      className="flex flex-col rounded-3xl min-w-[272px] max-w-[300px] flex-shrink-0 transition-all duration-200"
+      style={{
+        background: isOver ? `${col.headerBg}CC` : '#FAF6F0',
+        border: `1.5px solid ${isOver ? col.borderColor : '#EDDECC'}`,
+        boxShadow: isOver ? `0 4px 20px ${col.borderColor}30` : '0 2px 8px rgba(139,90,43,0.06)',
+      }}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3">
+      {/* Column Header */}
+      <div className="flex items-center justify-between px-4 py-3 rounded-t-3xl"
+        style={{background: col.headerBg, borderBottom: `1.5px dashed ${col.borderColor}`}}>
         <button
           className="flex items-center gap-2 group"
           onClick={() => setCollapsed(!collapsed)}
         >
           {collapsed
-            ? <ChevronRight size={13} className="text-slate-600"/>
-            : <ChevronDown  size={13} className="text-slate-600"/>
+            ? <ChevronRight size={14} style={{color:'#A1887F'}}/>
+            : <ChevronDown  size={14} style={{color:'#A1887F'}}/>
           }
-          <span className={cn('w-2 h-2 rounded-full flex-shrink-0', col.dotColor, col.glowClass)}/>
-          <span className="text-sm font-semibold text-slate-300">{col.label}</span>
-          <span className="text-xs text-slate-600 bg-dark-400 border border-white/07 px-1.5 py-0.5 rounded-full font-medium">
+          <span className="text-sm">{col.emoji}</span>
+          <span className="text-sm font-bold" style={{color:'#3E2723'}}>{col.label}</span>
+          <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+            style={{background: col.borderColor, color:'#FFFFFF'}}>
             {items.length}
           </span>
         </button>
         <button
           onClick={() => { setAdding(true); setCollapsed(false); }}
-          className="btn-ghost p-1.5 hover:text-brand-300"
+          className="btn-ghost-warm p-1.5"
         >
-          <Plus size={14}/>
+          <Plus size={15}/>
         </button>
       </div>
 
-      {/* Body */}
+      {/* Column Body */}
       {!collapsed && (
-        <div className="flex-1 px-3 pb-3 space-y-2 overflow-y-auto max-h-[calc(100vh-300px)] scrollbar-none">
+        <div className="flex-1 px-3 pb-3 pt-2 space-y-2 overflow-y-auto max-h-[calc(100vh-300px)] scrollbar-none">
           <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
             {items.map(item => <SortableCard key={item.id} item={item}/>)}
           </SortableContext>
 
           {items.length === 0 && !adding && (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Kanban size={20} className="text-slate-700 mb-2"/>
-              <p className="text-xs text-slate-700">拖放卡片到此欄</p>
+            <div className="flex flex-col items-center justify-center py-8 text-center gap-2">
+              <span className="text-3xl animate-float">{col.emoji}</span>
+              <p className="text-xs font-semibold" style={{color:'#A1887F'}}>拖放卡片到這裡</p>
             </div>
           )}
 
@@ -155,10 +148,10 @@ function KanbanColumn({
           {!adding && (
             <button
               onClick={() => setAdding(true)}
-              className="w-full text-left text-xs text-slate-700 hover:text-slate-400 px-2 py-2 rounded-xl hover:bg-white/04 transition-all flex items-center gap-1.5 mt-1"
+              className="w-full text-left text-xs font-semibold px-2 py-2 rounded-2xl transition-all flex items-center gap-1.5 mt-1 btn-ghost-warm"
+              style={{color:'#A1887F'}}
             >
-              <Plus size={11}/>
-              新增到{col.label}
+              <Plus size={12}/> 新增到{col.label}
             </button>
           )}
         </div>
@@ -169,25 +162,23 @@ function KanbanColumn({
 
 /* ── Project filter bar ─────────────────────────────────── */
 function ProjectBar({ projects, selected, onSelect }: {
-  projects: OmniItem[];
-  selected: string | null;
-  onSelect: (id: string | null) => void;
+  projects: OmniItem[]; selected: string | null; onSelect: (id: string | null) => void;
 }) {
   return (
     <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-      {[{ id: null, label: '所有任務' }, ...projects.map(p => ({ id: p.id, label: p.title }))].map(p => (
+      {[{ id: null, label: '所有任務', emoji: '📋' }, ...projects.map(p => ({ id: p.id, label: p.title, emoji: '📁' }))].map(p => (
         <button
           key={p.id ?? 'all'}
           onClick={() => onSelect(p.id)}
-          className={cn(
-            'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap border transition-all',
-            selected === p.id
-              ? 'bg-brand-600/25 border-brand-500/40 text-brand-300'
-              : 'border-white/07 text-slate-500 bg-dark-600 hover:border-white/12 hover:text-slate-300',
-          )}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all"
+          style={selected === p.id ? {
+            background: '#FFF8ED', border: '1.5px solid #FFB74D', color: '#E65100',
+            boxShadow: '0 2px 8px rgba(255,183,77,0.25)'
+          } : {
+            background: '#FAF6F0', border: '1.5px solid #EDDECC', color: '#8D6E63'
+          }}
         >
-          {p.id === null ? <Kanban size={11}/> : <Folder size={11}/>}
-          {p.label}
+          <span>{p.emoji}</span>{p.label}
         </button>
       ))}
     </div>
@@ -201,10 +192,7 @@ export function KanbanView() {
   const [activeId,  setActiveId]  = useState<string | null>(null);
   const [overColId, setOverColId] = useState<string | null>(null);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-  );
-
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
   const projects = items.filter(i => i.type === 'Project');
 
   let taskItems = filteredItems({ view: 'kanban' });
@@ -214,32 +202,22 @@ export function KanbanView() {
     taskItems = taskItems.filter(i => i.type === 'Task' || i.type === 'Project');
   }
 
-  function colItems(status: ItemStatus) {
-    return taskItems.filter(i => i.status === status);
-  }
+  function colItems(status: ItemStatus) { return taskItems.filter(i => i.status === status); }
 
-  /* ── Drag handlers ─────── */
-  function onDragStart({ active }: DragStartEvent) {
-    setActiveId(active.id as string);
-  }
+  function onDragStart({ active }: DragStartEvent) { setActiveId(active.id as string); }
 
   function onDragOver({ active, over }: DragOverEvent) {
     if (!over) { setOverColId(null); return; }
     const overId = over.id as string;
-
-    // Determine which column we're over
     const colMatch = COLUMNS.find(c => c.id === overId);
     if (colMatch) {
       setOverColId(colMatch.id);
-      // Real-time status update for fluid feel
       const draggedItem = taskItems.find(i => i.id === active.id);
       if (draggedItem && draggedItem.status !== colMatch.id) {
         updateItem(active.id as string, { status: colMatch.id });
       }
       return;
     }
-
-    // Over another card → adopt its column
     const overItem = taskItems.find(i => i.id === overId);
     if (overItem) {
       setOverColId(overItem.status);
@@ -251,43 +229,35 @@ export function KanbanView() {
   }
 
   function onDragEnd({ active, over }: DragEndEvent) {
-    setActiveId(null);
-    setOverColId(null);
+    setActiveId(null); setOverColId(null);
     if (!over) return;
-
     const overId = over.id as string;
     const colMatch = COLUMNS.find(c => c.id === overId);
-    if (colMatch) {
-      updateItem(active.id as string, { status: colMatch.id });
-      return;
-    }
-
+    if (colMatch) { updateItem(active.id as string, { status: colMatch.id }); return; }
     const overItem = taskItems.find(i => i.id === overId);
-    if (overItem) {
-      updateItem(active.id as string, { status: overItem.status });
-    }
+    if (overItem) { updateItem(active.id as string, { status: overItem.status }); }
   }
 
   async function handleAddItem(status: ItemStatus, title: string) {
-    const userId = user?.uid ?? ANONYMOUS_USER_ID;
     await addItem(createNewItem({
-      title,
-      user_id: userId,
-      type: 'Task',
-      status,
-      project_id: selectedProjectId,
+      title, user_id: user?.uid ?? ANONYMOUS_USER_ID,
+      type: 'Task', status, project_id: selectedProjectId,
     }));
   }
 
   const activeItem = activeId ? items.find(i => i.id === activeId) : null;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full" style={{background:'#FDFBF7'}}>
       {/* Header */}
-      <div className="px-6 pt-6 pb-4">
+      <div className="px-6 pt-6 pb-4" style={{borderBottom:'1.5px dashed #EDDECC'}}>
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-lg font-bold text-slate-100">專案看板</h1>
-          <span className="text-xs text-slate-600 bg-dark-500 border border-white/07 px-2.5 py-1 rounded-full">
+          <div className="flex items-center gap-2.5">
+            <span className="text-2xl">📋</span>
+            <h1 className="text-lg font-extrabold" style={{color:'#3E2723'}}>專案看板</h1>
+          </div>
+          <span className="text-xs font-bold px-3 py-1 rounded-full"
+            style={{background:'#F5EBE0', color:'#8D6E63', border:'1.5px solid #EDDECC'}}>
             {taskItems.length} 個任務
           </span>
         </div>
@@ -295,7 +265,7 @@ export function KanbanView() {
       </div>
 
       {/* Board */}
-      <div className="flex-1 overflow-hidden px-6 pb-6">
+      <div className="flex-1 overflow-hidden px-6 pb-6 pt-4">
         <DndContext
           sensors={sensors}
           collisionDetection={rectIntersection}
@@ -306,16 +276,14 @@ export function KanbanView() {
           <div className="flex gap-4 h-full overflow-x-auto pb-2 scrollbar-none">
             {COLUMNS.map(col => (
               <KanbanColumn
-                key={col.id}
-                col={col}
+                key={col.id} col={col}
                 items={colItems(col.id)}
                 isOver={overColId === col.id}
                 onAddItem={handleAddItem}
               />
             ))}
           </div>
-
-          <DragOverlay dropAnimation={{ duration: 150, easing: 'ease' }}>
+          <DragOverlay dropAnimation={{ duration: 180, easing: 'ease' }}>
             {activeItem ? <ItemCard item={activeItem} compact dragging/> : null}
           </DragOverlay>
         </DndContext>
